@@ -10,6 +10,9 @@ const session = require('express-session');
 const passport = require('passport');
 const passportLocalMongoose = require("passport-local-mongoose");
 
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const findOrCreate = require('mongoose-findorcreate');
+
 // const encrypt = require("mongoose-encryption"); // uses key a level2 security encription
 // const md5 = require('md5'); //level3 security using hashing 
 // const bcrypt = require('bcrypt'); //level4 security using hashing and salting
@@ -39,10 +42,13 @@ mongoose.connect("mongodb://localhost:27017/userDB ");
 //update the simple version of the schema
 const UserSchema = new mongoose.Schema({
     email: String,
-    password: String
+    password: String,
+    // googleId: String,
+    secret: String
 }) ;
 
 UserSchema.plugin(passportLocalMongoose);
+UserSchema.plugin(findOrCreate);
 
 // var secret = process.env.SECRET;
 //to encrypt the password field only add encytedfields:
@@ -53,13 +59,58 @@ const User = new mongoose.model("User", UserSchema);
 
 
 passport.use(User.createStrategy());
+////////it only works with local strategy so commented to add a strategy that works with google oauth as well
+// passport.serializeUser(User.serializeUser());
+// passport.deserializeUser(User.deserializeUser());
+///////this works for both local and google strategy///////
+passport.serializeUser(function(user, cb) {
+  process.nextTick(function() {
+    return cb(null, {
+      id: user.id,
+      username: user.username,
+      picture: user.picture
+    });
+  });
+});
 
-passport.serializeUser(User.serializeUser());
-passport.deserializeUser(User.deserializeUser());
+passport.deserializeUser(function(user, cb) {
+  process.nextTick(function() {
+    return cb(null, user);
+  });
+});
+
+passport.use(new GoogleStrategy({
+    clientID: process.env.CLIENT_ID,
+    clientSecret: process.env.CLIENT_SECRET,
+    callbackURL: "http://localhost:3000/auth/google/secrets",
+    userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo" //this is to fix the error appearing in the console
+  },
+  function(accessToken, refreshToken, profile, cb) {
+    //see what google sends back
+    console.log(profile);
+    User.findOrCreate({ username: profile.id }, function (err, user) {
+      return cb(err, user);
+    });
+  }
+));
 
 app.get("/", function(req, res){
     res.render("home");
 });
+// provide the google authentication pop up screen
+app.get('/auth/google',
+  passport.authenticate('google', { scope: ["profile"] })
+
+);
+//redirect to our website after google authentication
+app.get("/auth/google/secrets", 
+  passport.authenticate("google", { failureRedirect: "/login" }),
+  function(req, res) {
+    // Successful authentication, redirect secrets.
+    res.redirect("/secrets");
+  });
+
+
 app.get("/login", function(req, res){
     res.render("login");
 });
@@ -67,12 +118,41 @@ app.get("/register", function(req, res){
     res.render("register");
 }  );
 app.get("/secrets", function(req, res){
-    if(req.isAuthenticated()){
-        res.render("secrets");
+    User.find({"secret":{$ne:null}}).then(function(foundUsers){
+        if(foundUsers){
+            res.render("secrets",{usersWithSecrets: foundUsers});
+        }
+    }).catch(function(err){
+        console.log(err);
+    });
+
+});
+
+app.get("/submit", function(req,res){
+        if(req.isAuthenticated()){
+        res.render("submit");
     }else{
         res.redirect("/login");
     }
+
 });
+
+app.post("/submit",function(req,res){
+    const submittedSecret = req.body.secret;
+    User.findById(req.user.id).then(function(foundUser){
+        if(foundUser){
+            foundUser.secret = submittedSecret;
+            foundUser.save().then(function(){
+                res.redirect("/secrets");
+            });
+        }
+    }).catch(function(err){
+        console.log(err);
+    });
+
+  
+});
+
 
 app.get("/logout", function(req,res){
     req.logout(function(err){
