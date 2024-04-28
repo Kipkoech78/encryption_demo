@@ -122,6 +122,7 @@ app.get("/secrets", function(req, res){
         if(foundUsers){
             res.render("secrets",{usersWithSecrets: foundUsers});
         }
+   
     }).catch(function(err){
         console.log(err);
     });
@@ -171,7 +172,9 @@ app.post("/register", function(req, res){
         if(err){
             console.log(err);
             res.redirect("/register");
-        }else{
+
+            
+        }else {
             passport.authenticate("local")(req,res, function(){
                 res.redirect("/secrets");
             });
