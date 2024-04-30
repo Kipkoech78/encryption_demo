@@ -44,6 +44,7 @@ body {
 /* contact */
 .w3-center{
   text-align: center;
+  
 }
 .w3-col{
   text-align: centre;
@@ -124,7 +125,6 @@ body {
   /* border-top-left-radius: 0;
   border-top-right-radius: 0; */
 }
-
 .container-4{
  
   background-color: antiquewhite;
