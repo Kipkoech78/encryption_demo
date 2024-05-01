@@ -191,6 +191,7 @@ app.post("/register", function(req, res){
 });
 //clicking login button
 
+
 app.post("/login", function(req,res){
     const user = new User({
         username: req.body.username,
@@ -211,7 +212,16 @@ app.post("/login", function(req,res){
 
 
 // newsletter
+app.get("/failure" , function(res, req){
+    res.render("failure");
+});
+app.get("success", function(req,res){
+    res.render("success");
+});
 
+app.get("/index", function(req,res){
+    res.render("index");
+});
 
 
 app.post("/index",function(req, res){
@@ -246,11 +256,10 @@ app.post("/index",function(req, res){
     const request = https.request(url, options, function(response){
 
         if (response.statusCode ===200){
-            res.sendFile(__dirname+"/success.html");
+            res.render("success");
         }
         else{
-            res.sendFile(__dirname+"/failure.html");
-
+            res.render("failure");
 
         };
         response.on("data", function(data){
@@ -264,7 +273,8 @@ app.post("/index",function(req, res){
 app.get("/failure",function(req,res){
     res.redirect("/index");
 
-})
+});
+
 
 
 
