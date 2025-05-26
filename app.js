@@ -95,6 +95,7 @@ passport.use(new GoogleStrategy({
 ));
 
 app.get("/", function(req, res){
+   
     res.render("home");
 });
 // provide the google authentication pop up screen
@@ -112,9 +113,9 @@ app.get("/auth/google/secrets",
 app.get("/Contact", function(req, res){
     res.render("Contact");
 });
-app.get("/index", function(req, res){
-    res.render("index");
-});
+// app.get("/index", function(req, res){
+//     res.render("index");
+// });
 
 app.get("/login", function(req, res){
     res.render("login");
@@ -186,8 +187,6 @@ app.post("/register", function(req, res){
         }
     });
 
-
-
 });
 //clicking login button
 
@@ -210,27 +209,23 @@ app.post("/login", function(req,res){
 
 });
 
+// const express = require("express");
+// const app = express();
+// const bodyParser = require("body-parser");
+const https = require("https");
 
-// newsletter
-app.get("/failure" , function(res, req){
-    res.render("failure");
-});
-app.get("success", function(req,res){
-    res.render("success");
-});
+app.use(bodyParser.urlencoded({extended:true}));
+
+app.use(express.static("public"));
 
 app.get("/index", function(req,res){
+    // res.sendFile(__dirname+"/index.html");
     res.render("index");
 });
-
-
 app.post("/index",function(req, res){
     const firstname= req.body.firstname;
     const lastname= req.body.secondname;
     const emailget= req.body.emailget;
-
-
-
     const data ={
         members:[
             {
@@ -245,22 +240,21 @@ app.post("/index",function(req, res){
     };
     const jsonData = JSON.stringify(data);
 //read mdn documentation for more info on option on https  (nodejs.org)(https.request)
-
     const url ="https://us22.api.mailchimp.com/3.0/lists/b0c58e0b7c";
     const options ={
         method:"POST",
-
-        auth: process.env.OAUTHID
-
+        auth: process.env.MAILKEY
+        // auth: "kipkoech78:84a0a49b20c8662a42e460d4ea1d325d-us22"
     }
     const request = https.request(url, options, function(response){
 
         if (response.statusCode ===200){
             res.render("success");
+            // res.sendFile(__dirname+"/success.html");
         }
         else{
             res.render("failure");
-
+            // res.sendFile(__dirname+"/failure.html");
         };
         response.on("data", function(data){
             console.log(JSON.parse(data));
@@ -270,60 +264,14 @@ app.post("/index",function(req, res){
     request.end();
 
 });
+app.get("/success",function(req,res){
+    res.render("success");
+
+});
+
 app.get("/failure",function(req,res){
-    res.redirect("/index");
-
+    res.render("failure");
 });
-
-
-
-
-
-
-
-app.listen(3000, function(){
-    console.log("Server started on port 3000");
-});
-
-
-
-
-//     bcrypt.hash(req.body.password, saltRounds, function(err, hash) {
-    
-//     const newUser = new User({
-//         email: req.body.username,
-//         password:hash
-//     });
-//     newUser.save().then(function(){
-//         res.render("secrets");
-//         console.log("User saved successfully");
-//     }).catch(function(err){
-//         console.log(err);
-    
-//     });
-// });
-
-
-
-
-
-//     const username =req.body.username;
-//     const password = req.body.password;
-//     User.findOne({email:username}).then(function(foundUser){
-//         if(foundUser){
-//             bcrypt.compare(password,foundUser.password).then (function(result) {
-
-//             if(result === true){
-//                 res.render("secrets");
-//                 console.log("User logged in successfully");
-//             }else{
-//                 console.log("Password incorrect");
-//             }
-//     // result == true
-// });
-//         }else{
-//             console.log("User not found");
-//         }
-//     }).catch(function(err){
-//         console.log(err);
-//     });
+app.listen(process.env.PORT || 3000,function(){
+console.log("server is running on port 3000.")
+})
